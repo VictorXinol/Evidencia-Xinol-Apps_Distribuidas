@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente GraphQL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Cliente GraphQL</h1>
+
+        <div class="row">
+            <div class="col-md-2">
+                <h2>Crear Persona</h2>
+                <form id="createForm">
+                    <div class="mb-3">
+                        <label for="createNombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="createNombre" >
+                    </div>
+                    <div class="mb-3">
+                        <label for="createApellidos" class="form-label">Apellidos</label>
+                        <input type="text" class="form-control" id="createApellidos">
+                    </div>
+                    <div class="mb-3">
+                        <label for="createEdad" class="form-label">Edad</label>
+                        <input type="text" class="form-control" id="createEdad" >
+                    </div>
+                    <div class="mb-3">
+                        <label for="createPais" class="form-label">País</label>
+                        <input type="text" class="form-control" id="createPais">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Crear</button>
+                </form>
+            </div>
+
+
+            <div class="col-md-10">
+                <h2>Listado de Personas</h2>
+                <div class="table-responsive">
+                    <table id="personasTable" class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Apellidos</th>
+                                <th>Edad</th>
+                                <th>País</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="personasList"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <script>
+        const createForm = document.getElementById("createForm");
+        const createNombre = document.getElementById("createNombre");
+        const createApellidos = document.getElementById("createApellidos");
+        const createEdad = document.getElementById("createEdad");
+        const createPais = document.getElementById("createPais");
+        const personasList = document.getElementById("personasList");
+        
+
+        const API_URL = "http://192.168.224.194:4000/graphql";
+        
+
+
+        const createPersona = async () => {
+            const query = `
+                mutation CreatePersona($nombre: String!, $apellidos: String!, $edad: String!, $pais: String!) {
+                    createPost(post: { nombre: $nombre, apellidos: $apellidos, edad: $edad, pais: $pais }) {
+                        id
+                        nombre
+                        apellidos
+                        edad
+                        pais
+                    }
+                }
+            `;
+        
+            const variables = {
+                nombre: createNombre.value,
+                apellidos: createApellidos.value,
+                edad: createEdad.value,
+                pais: createPais.value,
+            };
+        
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query, variables }),
+            });
+        
+            const data = await response.json();
+            console.log(data);
+            getPersonas(); 
+        };
+        
+
+
+
+
+
+        const getPersonas = async () => {
+            const query = `
+                query {
+                    mostrar {
+                        id
+                        nombre
+                        apellidos
+                        edad
+                        pais
+                    }
+                }
+            `;
+        
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query }),
+            });
+        
+            const data = await response.json();
+            const personas = data.data.mostrar;
+        
+            personasList.innerHTML = "";
+        
+
+
+
+
+       
+            personas.forEach((persona) => {
+                const row = document.createElement("tr");
+        
+                const nombreCell = document.createElement("td");
+                nombreCell.textContent = persona.nombre;
+                row.appendChild(nombreCell);
+        
+                const apellidosCell = document.createElement("td");
+                apellidosCell.textContent = persona.apellidos;
+                row.appendChild(apellidosCell);
+        
+                const edadCell = document.createElement("td");
+                edadCell.textContent = persona.edad;
+                row.appendChild(edadCell);
+        
+                const paisCell = document.createElement("td");
+                paisCell.textContent = persona.pais;
+                row.appendChild(paisCell);
+        
+                const accionesCell = document.createElement("td");
+
+                const updateButton = document.createElement("button");
+                updateButton.textContent = "Actualizar";
+                updateButton.classList.add("btn", "btn-primary", "btn-sm", "me-2");
+                updateButton.addEventListener("click", () => updatePersona(persona.id));
+        
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Eliminar";
+                deleteButton.classList.add("btn", "btn-danger", "btn-sm");
+                deleteButton.addEventListener("click", () => deletePersona(persona.id));
+        
+                accionesCell.appendChild(updateButton);
+                accionesCell.appendChild(deleteButton);
+                row.appendChild(accionesCell);
+        
+                personasList.appendChild(row);
+            });
+        };
+        
+
+
+
+
+       
+        const updatePersona = async (id) => {
+            const nombre = prompt("Ingrese el nuevo nombre:");
+            const apellidos = prompt("Ingrese los nuevos apellidos:");
+            const edad = prompt("Ingrese la nueva edad:");
+            const pais = prompt("Ingrese el nuevo país:");
+        
+            const query = `
+                mutation UpdatePersona($id: String!, $nombre: String!, $apellidos: String!, $edad: String!, $pais: String!) {
+                    updatePost(id: $id, post: { nombre: $nombre, apellidos: $apellidos, edad: $edad, pais: $pais }) {
+                        id
+                        nombre
+                        apellidos
+                        edad
+                        pais
+                    }
+                }
+            `;
+        
+            const variables = {
+                id,
+                nombre,
+                apellidos,
+                edad,
+                pais,
+            };
+        
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query, variables }),
+            });
+        
+            const data = await response.json();
+            console.log(data);
+            getPersonas(); 
+        };
+        
+
+
+
+  
+
+        const deletePersona = async (id) => {
+            const query = `
+                mutation DeletePersona($id: String!) {
+                    deletePost(id: $id)
+                }
+            `;
+        
+            const variables = {
+                id,
+            };
+        
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query, variables }),
+            });
+        
+            const data = await response.json();
+            console.log(data);
+            getPersonas(); 
+        };
+        
+
+
+
+
+
+      
+        createForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            createPersona();
+            createNombre.value = "";
+            createApellidos.value = "";
+            createEdad.value = "";
+            createPais.value = "";
+        });
+        
+
+        getPersonas();
+    </script>
+
+
+
+
+
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
